@@ -2363,6 +2363,7 @@ static USHORT QosSetBindMuxDataPort(PQMUX_MSG pMUXMsg, void *arg) {
 
 #ifdef CONFIG_REG_QOS_IND
 static USHORT QosIndRegReq(PQMUX_MSG pMUXMsg, void *arg) {
+    (void) arg;
     pMUXMsg->QosIndRegReq.ReportGlobalQosFlowTlv.TLVType = 0x10;
     pMUXMsg->QosIndRegReq.ReportGlobalQosFlowTlv.TLVLength = cpu_to_le16(1);
     pMUXMsg->QosIndRegReq.ReportGlobalQosFlowTlv.report_global_qos_flows = 1;
