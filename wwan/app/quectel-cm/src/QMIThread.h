@@ -17,9 +17,9 @@
 //#define REBOOT_SIM_CARD_WHEN_LONG_TIME_NO_PS 60 //unit is seconds
 //#define CONFIG_QRTR
 //#define CONFIG_ENABLE_QOS
-//#define CONFIG_REG_QOS_IND
-//#define CONFIG_GET_QOS_INFO
-//#define CONFIG_GET_QOS_DATA_RATE
+#define CONFIG_REG_QOS_IND
+#define CONFIG_GET_QOS_INFO
+#define CONFIG_GET_QOS_DATA_RATE
 
 #if (defined(CONFIG_REG_QOS_IND) || defined(CONFIG_GET_QOS_INFO) || defined(CONFIG_GET_QOS_DATA_RATE))
 #ifndef CONFIG_REG_QOS_IND
@@ -202,6 +202,7 @@ typedef struct __PROFILE {
     bool enable_ipv4;
     bool enable_ipv6;
     bool no_dhcp;
+    bool openwrt_mode;
     const char *logfile;
     const char *usblogfile;
     char expect_adapter[32];
