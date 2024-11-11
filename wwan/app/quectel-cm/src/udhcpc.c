@@ -415,6 +415,41 @@ static void ql_openwrt_setup_wan(const char *ifname, const IPV4_T *ipv4) {
     ql_openwrt_system("ifup wan");
 }
 
+static void ql_openwrt_print_connection_info(const IPV4_T *ipv4, const IPV6_T *ipv6) {
+    char json[512], jsonv6[512];
+
+    if (ipv4 && ipv4->Address) {
+        snprintf(json, sizeof(json), 
+             "{\"ipaddr\":\"%s\",\"netmask\":\"%s\","
+             "\"gateway\":\"%s\",\"dns\":[\"%s%s%s\"]}",
+             ipv4Str(ipv4->Address),
+             ipv4Str(ipv4->SubnetMask),
+             ipv4Str(ipv4->Gateway),
+             ipv4Str(ipv4->DnsPrimary),
+             ipv4->DnsSecondary != 0 ? "\",\"" : "",
+             ipv4->DnsSecondary != 0 ? ipv4Str(ipv4->DnsSecondary) : "");
+    } else {
+        json = "null";
+    }
+
+    if (ipv6 && ipv6->Address[0] && ipv6->PrefixLengthIPAddr) {
+        snprintf(jsonv6, sizeof(jsonv6),
+             "{\"ip6addr\":\"%s\",\"netmask\":\"%s\","
+             "\"gateway\":\"%s\",\"prefix\":%d,\"dns\":[\"%s%s%s\"]}",
+             ipv6Str(ipv6->Address),
+             ipv6Str(ipv6->SubnetMask),
+             ipv6Str(ipv6->Gateway),
+             ipv6->PrefixLengthIPAddr,
+             ipv6Str(ipv6->DnsPrimary),
+             ipv6->DnsSecondary[0] ? "\",\"" : "",
+             ipv6->DnsSecondary[0] ? ipv6Str(ipv6->DnsSecondary) : "");
+    } else {
+        jsonv6 = "null";
+    }
+    
+    dbg_time("Connection Information: {\"ipv4\":%s,\"ipv6\":%s}", json, jsonv6);
+}
+
 static void ql_openwrt_setup_wan6(const char *ifname, const IPV6_T *ipv6) {
     FILE *fp = NULL;
     char config[64];
@@ -526,8 +561,12 @@ void udhcpc_start(PROFILE_T *profile) {
         return;
     }
 #endif
+    if (profile->openwrt_mode) {
+        ql_openwrt_print_connection_info(&profile->ipv4, &profile->ipv6);
+        goto set_ipv6;
+    }
 
-    if (profile->ipv4.Address == 0 || profile->openwrt_mode)
+    if (profile->ipv4.Address == 0)
         goto set_ipv6;
 
     if (profile->no_dhcp || profile->request_ops == &mbim_request_ops) { //lots of mbim modem do not support DHCP

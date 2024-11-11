@@ -129,8 +129,8 @@ proto_quectel_setup() {
  	if [ ifconfig "${ifname}_1" &>"/dev/null" ]; then
  		ifname4="${ifname}_1"
    	else
-    		ifname4="$ifname"
-      	fi
+		ifname4="$ifname"
+	fi
 	
 	if [ "$multiplexing" = 1 ]; then
 		ifconfig "${ifname}_2" &>"/dev/null" && ifname6="${ifname}_2"

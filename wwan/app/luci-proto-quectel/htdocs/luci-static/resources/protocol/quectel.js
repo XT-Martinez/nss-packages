@@ -145,6 +145,12 @@ return network.registerProtocol('quectel', {
 		o = s.taboption('advanced', form.Flag, 'create_virtual_interface', _('Auto-create virtual interface'));
 		o.default = o.enabled;
 
+		o = s.taboption('advanced', form.Flag, 'dhcp', _('Use DHCP'));
+		o.default = o.disabled;
+
+		o = s.taboption('advanced', form.Flag, 'dhcpv6', _('Use DHCPv6'));
+		o.default = o.disabled;
+
 		o = s.taboption('general', form.ListValue, 'pdptype', _('PDP Type'));
 		o.value('ipv4v6', 'IPv4/IPv6');
 		o.value('ipv4', 'IPv4');
