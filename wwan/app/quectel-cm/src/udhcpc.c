@@ -362,7 +362,7 @@ static void ql_openwrt_print_connection_info(const IPV4_T *ipv4, const IPV6_T *i
              ipv4->DnsSecondary != 0 ? "\",\"" : "",
              ipv4->DnsSecondary != 0 ? ipv4Str(ipv4->DnsSecondary) : "");
     } else {
-        json = "null";
+        strcpy(json, "null");
     }
 
     if (ipv6 && ipv6->Address[0] && ipv6->PrefixLengthIPAddr) {
@@ -377,7 +377,7 @@ static void ql_openwrt_print_connection_info(const IPV4_T *ipv4, const IPV6_T *i
              ipv6->DnsSecondary[0] ? "\",\"" : "",
              ipv6->DnsSecondary[0] ? ipv6Str(ipv6->DnsSecondary) : "");
     } else {
-        jsonv6 = "null";
+        strcpy(jsonv6, "null");
     }
     
     dbg_time("Connection Information: {\"ipv4\":%s,\"ipv6\":%s}", json, jsonv6);
