@@ -379,7 +379,7 @@ static void ql_openwrt_print_connection_info(const IPV4_T *ipv4, const IPV6_T *i
         dns2 = strdup(ipv6Str(ipv6->DnsSecondary[0] ? ipv6->DnsSecondary : ipv6->DnsPrimary));
         snprintf(jsonv6, sizeof(jsonv6),
              "{\"ip6addr\":\"%s\",\"netmask\":\"%s\","
-             "\"gateway\":\"%s\",\"prefix\":%d,\"dns1\":\"%s\",\"dns2\":\"%s\"]}",
+             "\"gateway\":\"%s\",\"prefix\":%d,\"dns1\":\"%s\",\"dns2\":\"%s\"}",
              ipaddr,
              netmask,
              gateway,
