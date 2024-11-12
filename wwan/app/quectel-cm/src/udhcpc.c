@@ -350,32 +350,43 @@ static void update_ip_address_by_qmi(const char *ifname, const IPV4_T *ipv4, con
 
 static void ql_openwrt_print_connection_info(const IPV4_T *ipv4, const IPV6_T *ipv6) {
     char json[512], jsonv6[512];
+    char *ipaddr, *netmask, *gateway, *dns1, *dns2;
 
     if (ipv4 && ipv4->Address) {
+        ipaddr = strdup(ipv4Str(ipv4->Address));
+        netmask = strdup(ipv4Str(ipv4->SubnetMask));
+        gateway = strdup(ipv4Str(ipv4->Gateway));
+        dns1 = strdup(ipv4Str(ipv4->DnsPrimary));
+        dns2 = strdup(ipv4Str(ipv4->DnsSecondary ? ipv4->DnsSecondary : ipv4->DnsPrimary));
         snprintf(json, sizeof(json), 
              "{\"ipaddr\":\"%s\",\"netmask\":\"%s\","
-             "\"gateway\":\"%s\",\"dns\":[\"%s%s%s\"]}",
-             ipv4Str(ipv4->Address),
-             ipv4Str(ipv4->SubnetMask),
-             ipv4Str(ipv4->Gateway),
-             ipv4Str(ipv4->DnsPrimary),
-             ipv4->DnsSecondary != 0 ? "\",\"" : "",
-             ipv4->DnsSecondary != 0 ? ipv4Str(ipv4->DnsSecondary) : "");
+             "\"gateway\":\"%s\",\"dns1\":\"%s\",\"dns2\":\"%s\"}",
+             ipaddr,
+             netmask,
+             gateway,
+             dns1,
+             dns2);
+        free(ipaddr); free(netmask); free(gateway); free(dns1); free(dns2);
     } else {
         strcpy(json, "null");
     }
 
     if (ipv6 && ipv6->Address[0] && ipv6->PrefixLengthIPAddr) {
+        ipaddr = strdup(ipv6Str(ipv6->Address));
+        netmask = strdup(ipv6Str(ipv6->SubnetMask));
+        gateway = strdup(ipv6Str(ipv6->Gateway));
+        dns1 = strdup(ipv6Str(ipv6->DnsPrimary));
+        dns2 = strdup(ipv6Str(ipv6->DnsSecondary[0] ? ipv6->DnsSecondary : ipv6->DnsPrimary));
         snprintf(jsonv6, sizeof(jsonv6),
              "{\"ip6addr\":\"%s\",\"netmask\":\"%s\","
-             "\"gateway\":\"%s\",\"prefix\":%d,\"dns\":[\"%s%s%s\"]}",
-             ipv6Str(ipv6->Address),
-             ipv6Str(ipv6->SubnetMask),
-             ipv6Str(ipv6->Gateway),
+             "\"gateway\":\"%s\",\"prefix\":%d,\"dns1\":\"%s\",\"dns2\":\"%s\"]}",
+             ipaddr,
+             netmask,
+             gateway,
              ipv6->PrefixLengthIPAddr,
-             ipv6Str(ipv6->DnsPrimary),
-             ipv6->DnsSecondary[0] ? "\",\"" : "",
-             ipv6->DnsSecondary[0] ? ipv6Str(ipv6->DnsSecondary) : "");
+             dns1,
+             dns2);
+        free(ipaddr); free(netmask); free(gateway); free(dns1); free(dns2);
     } else {
         strcpy(jsonv6, "null");
     }
