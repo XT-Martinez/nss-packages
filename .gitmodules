@@ -1,3 +1,15 @@
 [submodule "wwan/app/luci-app-internet-detector"]
 	path = wwan/app/luci-app-internet-detector
 	url = https://github.com/gSpotx2f/luci-app-internet-detector
+[submodule "wwan/app/luci-app-modemband"]
+	path = wwan/app/luci-app-modemband
+	url = https://github.com/4IceG/luci-app-modemband
+[submodule "wwan/app/luci-app-atcommands"]
+	path = wwan/app/luci-app-atcommands
+	url = https://github.com/4IceG/luci-app-atcommands
+[submodule "wwan/app/luci-app-3ginfo-lite"]
+	path = wwan/app/luci-app-3ginfo-lite
+	url = https://github.com/4IceG/luci-app-3ginfo-lite
+[submodule "wwan/app/luci-app-sms-tool-js"]
+	path = wwan/app/luci-app-sms-tool-js
+	url = https://github.com/4IceG/luci-app-sms-tool-js
