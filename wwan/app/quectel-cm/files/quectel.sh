@@ -36,7 +36,7 @@ proto_quectel_setup() {
 	local device apn apnv6 auth username password pincode delay pdptype pdnindex pdnindexv6 multiplexing create_virtual_interface cell_lock_4g
 	local dhcp dhcpv6 sourcefilter delegate mtu $PROTO_DEFAULT_OPTIONS
 	local ip4table ip6table
-	local pid zone
+	local pid zone npipe1 npipe2 npipe
 
 	json_get_vars device apn apnv6 auth username password pincode delay pdnindex pdnindexv6 multiplexing create_virtual_interface
 	json_get_vars pdptype dhcp dhcpv6 sourcefilter delegate ip4table
@@ -105,25 +105,7 @@ proto_quectel_setup() {
 	quectel-qmi-proxy &
 	sleep 3
 
-	if [ "$multiplexing" = 1 ]; then
-		[ -n "$pdnindex" ] || pdnindex="1"
-		[ -n "$pdnindexv6" ] || pdnindexv6="2"
-
-		if [ -n "$ipv4opt" ]; then
-			quectel-cm -o -i "$ifname" $ipv4opt -n $pdnindex -m 1 ${pincode:+-p $pincode} -s "$apn" "$username" "$password" "$auth" &
-		fi
-		if [ -n "$ipv6opt" ]; then
-			quectel-cm -o -i "$ifname" $ipv6opt -n $pdnindexv6 -m 2 ${pincode:+-p $pincode} -s "$apnv6" "$username" "$password" "$auth" &
-		fi
-	else
-		quectel-cm -o -i "$ifname" $ipv4opt $ipv6opt ${pincode:+-p $pincode} -s "$apn" "$username" "$password" "$auth" &
-	fi
-	
-	sleep 5
-
-	ifconfig "$ifname" up
-
- 	# If $ifname_1 is not a valid device set $ifname4 to base $ifname as fallback
+	# If $ifname_1 is not a valid device set $ifname4 to base $ifname as fallback
   	# so modems not using RMNET/QMAP data aggregation still set up properly. QMAP
    	# can be set via qmap_mode=n parameter during qmi_wwan_q module loading.
  	if [ ifconfig "${ifname}_1" &>"/dev/null" ]; then
@@ -144,6 +126,26 @@ proto_quectel_setup() {
 		[ "$multiplexing" = 1 ] && /sbin/ip link set dev "$ifname6" mtu "$mtu"
 	fi
 
+	if [ "$multiplexing" = 1 ]; then
+		[ -n "$pdnindex" ] || pdnindex="1"
+		[ -n "$pdnindexv6" ] || pdnindexv6="2"
+
+		if [ -n "$ipv4opt" ]; then
+			npipe1="/tmp/quectel_wwan0_1"
+			[ ! -p "$npipe1" ] && mkfifo "$npipe1"
+			quectel-cm -o -i "$ifname" $ipv4opt -n $pdnindex -m 1 ${pincode:+-p $pincode} -s "$apn" "$username" "$password" "$auth" > "$npipe1" &
+		fi
+		if [ -n "$ipv6opt" ]; then
+			npipe2="/tmp/quectel_wwan0_2"
+			[ ! -p "$npipe2" ] && mkfifo "$npipe2"
+			quectel-cm -o -i "$ifname" $ipv6opt -n $pdnindexv6 -m 2 ${pincode:+-p $pincode} -s "$apnv6" "$username" "$password" "$auth" > "$npipe2" &
+		fi
+	else
+		npipe="/tmp/quectel_wwan0"
+		[ ! -p "$npipe" ] && mkfifo "$npipe"
+		quectel-cm -o -i "$ifname" $ipv4opt $ipv6opt ${pincode:+-p $pincode} -s "$apn" "$username" "$password" "$auth" > "$npipe" &
+	fi
+
 	echo "Setting up $ifname"
 	proto_init_update "$ifname" 1
 	proto_set_keep 1
@@ -162,7 +164,40 @@ proto_quectel_setup() {
 		json_add_string name "${interface}_6"
 		json_add_string device "$ifname6"
 		[ "$pdptype" = "ipv4v6" ] && json_add_string iface_464xlat "0"
-		json_add_string proto "dhcpv6"
+		if [ -z "$dhcpv6" -o "$dhcpv6" = 0 ]; then
+			[ "$multiplexing" = 1 ] && npipe="$npipe2"
+			json_load $(get_connection_information_from_pipe $npipe $ifname)
+			json_select ipv6
+			
+			json_get_var ip6addr "ip6addr"
+			json_get_var gateway "gateway"
+			json_get_var prefix "prefix"
+			json_get_var dns1 "dns1"
+			json_get_var dns2 "dns2"
+			 
+			json_add_string proto "static"
+
+			json_add_string ip6addr "$ip6addr/$prefix"
+			json_add_string ip6prefix "$ip6addr/$prefix"
+			json_add_string ip6gw "$gateway"
+
+			# json_add_array ip6addr
+			# json_add_string "" "$ip6addr/$prefix"
+			# json_close_array
+
+			# json_add_array ip6prefix
+			# json_add_string "" "$ip6addr/$prefix"
+			# json_close_array
+
+			# json_add_string ip6gw "$gateway"
+
+			json_add_array dns
+			json_add_string "" "$dns1"
+			json_add_string "" "$dns2"
+			json_close_array
+		else
+			json_add_string proto "dhcpv6"
+		fi
 		proto_add_dynamic_defaults
 		[ -z "$ip6table" ] || json_add_string ip6table "$ip6table"
 		# RFC 7278: Extend an IPv6 /64 Prefix to LAN
@@ -178,13 +213,54 @@ proto_quectel_setup() {
 		json_init
 		json_add_string name "${interface}_4"
 		json_add_string device "$ifname4"
-		json_add_string proto "dhcp"
+		if [ -z "$dhcp" -o "$dhcp" = 0 ]; then
+			[ "$multiplexing" = 1 ] && npipe="$npipe1"
+			json_load $(get_connection_information_from_pipe $npipe $ifname)
+			json_select ipv4
+
+			json_get_var ipaddr "ipaddr"
+			json_get_var gateway "gateway"
+			json_get_var netmask "netmask"
+			json_get_var dns1 "dns1"
+			json_get_var dns2 "dns2"
+
+			json_add_string proto "static"
+
+			json_add_string ipaddr "$ipaddr"
+			json_add_string netmask "$netmask"
+			json_add_string gateway "$gateway"
+
+			json_add_array dns
+			json_add_string "" "$dns1"
+			json_add_string "" "$dns2"
+			json_close_array
+		else
+			json_add_string proto "dhcp"
+		fi
 		[ -z "$ip4table" ] || json_add_string ip4table "$ip4table"
 		proto_add_dynamic_defaults
 		[ -z "$zone" ] || json_add_string zone "$zone"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	fi
+
+	[ -p "$npipe1" ] && rm "$npipe1"
+	[ -p "$npipe2" ] && rm "$npipe2"
+	[ -p "$npipe" ] && rm "$npipe"
+}
+
+get_connection_information_from_pipe() {
+	local npipe, interface
+	npipe="$1"
+	interface="$2"
+	tail -f "$npipe" | while read -r line; do
+		if echo "$line" | grep -q "Connection Information:"; then
+			echo "$line" | sed 's/.*Connection Information: //'
+			break
+		elif echo "$line" | grep -q "ip link set dev $interface down"; then
+			break
+		fi
+	done
 }
 
 proto_quectel_teardown() {
