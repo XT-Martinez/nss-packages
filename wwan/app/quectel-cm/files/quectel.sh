@@ -97,25 +97,26 @@ proto_quectel_setup() {
 		proto_set_available "$interface" 0
 		return 1
 	}
+	qmap_mode=$(cat "$devpath/net/$ifname/qmap_mode" 2>/dev/null)
 
 	[ "$pdptype" = "ipv4" -o "$pdptype" = "ipv4v6" ] && ipv4opt="-4"
 	[ "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && ipv6opt="-6"
 	[ -n "$auth" ] || auth="none"
 
 	quectel-qmi-proxy &
-	sleep 3
+	sleep 2
 
 	# If $ifname_1 is not a valid device set $ifname4 to base $ifname as fallback
   	# so modems not using RMNET/QMAP data aggregation still set up properly. QMAP
    	# can be set via qmap_mode=n parameter during qmi_wwan_q module loading.
- 	if [ ifconfig "${ifname}_1" &>"/dev/null" ]; then
- 		ifname4="${ifname}_1"
-   	else
+	if [ -n "$qmap_mode" ] && [ "$qmap_mode" -gt "0" ]; then
+		ifname4="${ifname}_1"
+	else
 		ifname4="$ifname"
 	fi
 
-	if [ "$multiplexing" = 1 ]; then
-		ifconfig "${ifname}_2" &>"/dev/null" && ifname6="${ifname}_2"
+	if [ "$multiplexing" = 1 ] && [ -n "$qmap_mode" ] && [ "$qmap_mode" -gt "1" ]; then
+		ifname6="${ifname}_2"
 	else
 		ifname6="$ifname4"
 	fi
@@ -276,7 +277,7 @@ proto_quectel_teardown() {
 		[ "$pdptype" = "ipv4" -o "$pdptype" = "ipv4v6" ] && ifdown "${interface}_4"
 		[ "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] && ifdown "${interface}_6"
 	fi
-
+	
 	proto_init_update "*" 0
 	proto_send_update "$interface"
 }
