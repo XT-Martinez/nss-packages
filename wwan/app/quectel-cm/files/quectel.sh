@@ -140,8 +140,8 @@ proto_quectel_setup() {
 			quectel-cm -o -i "$ifname" $ipv6opt -n $pdnindexv6 -m 2 ${pincode:+-p $pincode} -s "$apnv6" "$username" "$password" "$auth" > "/tmp/$ifname6" &
 		fi
 	else
-		rm "/tmp/$ifname"
-		quectel-cm -o -i "$ifname" $ipv4opt $ipv6opt ${pincode:+-p $pincode} -s "$apn" "$username" "$password" "$auth" > "/tmp/$ifname" &
+		rm -f "/tmp/$ifname4"
+		quectel-cm -o -i "$ifname" $ipv4opt $ipv6opt ${pincode:+-p $pincode} -s "$apn" "$username" "$password" "$auth" > "/tmp/$ifname4" &
 	fi
 
 	echo "Setting up $ifname"
