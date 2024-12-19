@@ -225,7 +225,7 @@ proto_quectel_setup() {
 			json_add_string ip6gw "$gateway"
 
 			json_add_array ip6addr
-			json_add_string "" "$ip6addr/$prefix"
+			json_add_string "" "$ip6addr/128"
 			json_close_array
 
 			json_add_array ip6prefix
@@ -248,6 +248,7 @@ proto_quectel_setup() {
 		[ -z "$zone" ] || json_add_string zone "$zone"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
+		[ -z "$dhcpv6" -o "$dhcpv6" = 0 ] && ip -6 route add default dev "$ifname6"
 	fi
 }
 
